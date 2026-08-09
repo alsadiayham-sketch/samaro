@@ -1,4 +1,4 @@
-import { json, bad, requireRole, readJson } from "./_utils.js";
+import { json, bad, requireRole, readJson, cleanText, cleanLinkUrl } from "./_utils.js";
 
 const KEY = "config";
 
@@ -19,9 +19,16 @@ export async function onRequestPost(context) {
     if (gate.error) return gate.error;
     const body = await readJson(context.request);
     if (!body || typeof body !== "object") return bad(400, "invalid body");
+    const data = {
+        whatsappNumber: cleanText(body.whatsappNumber, 30).replace(/\D/g, ""),
+        heroSubtitle: cleanText(body.heroSubtitle, 240),
+        aboutText: cleanText(body.aboutText, 1600),
+        instagramLink: cleanLinkUrl(body.instagramLink),
+        tiktokLink: cleanLinkUrl(body.tiktokLink)
+    };
     await context.env.DB
         .prepare("INSERT INTO settings (key, data) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data")
-        .bind(KEY, JSON.stringify(body))
+        .bind(KEY, JSON.stringify(data))
         .run();
-    return json({ settings: body });
+    return json({ settings: data });
 }

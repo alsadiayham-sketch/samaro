@@ -1,0 +1,7 @@
+.git
+.github
+.wrangler
+functions
+schema.sql
+seed-data.js
+wrangler.toml

@@ -329,7 +329,8 @@ function renderProductsTable() {
     }
 
     tbody.innerHTML = products.map(function (product) {
-        return '<tr><td><input type="checkbox" class="product-select" value="' + product.id + '" onchange="updateBulkBar()"></td><td><img src="' + product.image + '" alt="' + product.name + '" onerror="this.src=\'' + FALLBACK_IMAGE + '\'"></td><td>' + product.name + '</td><td>' + product.brand + '</td><td>' + product.category + '</td><td>' + formatSizes(product) + '</td><td>' + formatPrices(product) + '</td><td>' + (product.discount ? product.discount + '%' : '-') + '</td><td><span class="status-tag ' + (product.status || 'normal') + '">' + statusLabels[product.status || 'normal'] + '</span></td><td class="actions"><button class="btn-edit" onclick="editProduct(\'' + product.id + '\')">تعديل</button><button class="btn-delete" onclick="deleteProduct(\'' + product.id + '\')">حذف</button></td></tr>';
+        var safeId = String(product.id).replace(/[^A-Za-z0-9_-]/g, '');
+        return '<tr><td><input type="checkbox" class="product-select" value="' + safeId + '" onchange="updateBulkBar()"></td><td><img src="' + escapeHtml(safeMediaUrl(product.image)) + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + FALLBACK_IMAGE + '\'"></td><td>' + escapeHtml(product.name) + '</td><td>' + escapeHtml(product.brand) + '</td><td>' + escapeHtml(product.category) + '</td><td>' + escapeHtml(formatSizes(product)) + '</td><td>' + formatPrices(product) + '</td><td>' + (product.discount ? Number(product.discount) + '%' : '-') + '</td><td><span class="status-tag ' + (product.status || 'normal') + '">' + statusLabels[product.status || 'normal'] + '</span></td><td class="actions"><button class="btn-edit" onclick="editProduct(\'' + safeId + '\')">تعديل</button><button class="btn-delete" onclick="deleteProduct(\'' + safeId + '\')">حذف</button></td></tr>';
     }).join('');
     updateBulkBar();
 }
@@ -418,7 +419,7 @@ function addSizeRow(sizeData) {
     var container = document.getElementById('sizesContainer');
     var row = document.createElement('div');
     row.className = 'size-row';
-    row.innerHTML = '<input type="text" class="size-value" placeholder="الحجم أو النوع" value="' + safeSize.size + '"><select class="size-unit"><option value="قطعة" ' + (safeSize.unit === 'قطعة' ? 'selected' : '') + '>قطعة</option><option value="ml" ' + (safeSize.unit === 'ml' ? 'selected' : '') + '>مل (ml)</option><option value="g" ' + (safeSize.unit === 'g' ? 'selected' : '') + '>غرام (g)</option></select><input type="number" class="size-price" min="0" placeholder="السعر ₪" value="' + safeSize.price + '"><button type="button" class="btn-remove-size" onclick="removeSizeRow(this)">حذف</button>';
+    row.innerHTML = '<input type="text" class="size-value" placeholder="الحجم أو النوع" value="' + escapeHtml(safeSize.size) + '"><select class="size-unit"><option value="قطعة" ' + (safeSize.unit === 'قطعة' ? 'selected' : '') + '>قطعة</option><option value="ml" ' + (safeSize.unit === 'ml' ? 'selected' : '') + '>مل (ml)</option><option value="g" ' + (safeSize.unit === 'g' ? 'selected' : '') + '>غرام (g)</option></select><input type="number" class="size-price" min="0" placeholder="السعر ₪" value="' + (Number(safeSize.price) || 0) + '"><button type="button" class="btn-remove-size" onclick="removeSizeRow(this)">حذف</button>';
     container.appendChild(row);
 }
 
@@ -443,11 +444,11 @@ function openProductModal(product) {
     document.getElementById('productDiscount').value = product ? product.discount : 0;
     document.getElementById('productImage').value = product ? product.image : '';
     document.getElementById('productImageFile').value = '';
-    document.getElementById('imagePreview').innerHTML = product && product.image ? '<img src="' + product.image + '" onerror="this.style.display=\'none\'">' : '';
+    document.getElementById('imagePreview').innerHTML = product && product.image ? '<img src="' + escapeHtml(safeMediaUrl(product.image)) + '" onerror="this.style.display=\'none\'">' : '';
     document.getElementById('productStatus').value = product ? product.status : 'normal';
     renderSizeRows(product ? product.sizes : [createEmptySize()]);
-    document.getElementById('brandsList').innerHTML = Array.from(new Set(products.map(function (entry) { return entry.brand; }))).map(function (brand) { return '<option value="' + brand + '">'; }).join('');
-    document.getElementById('categoriesList').innerHTML = Array.from(new Set(products.map(function (entry) { return entry.category; }))).map(function (category) { return '<option value="' + category + '">'; }).join('');
+    document.getElementById('brandsList').innerHTML = Array.from(new Set(products.map(function (entry) { return entry.brand; }))).map(function (brand) { return '<option value="' + escapeHtml(brand) + '">'; }).join('');
+    document.getElementById('categoriesList').innerHTML = Array.from(new Set(products.map(function (entry) { return entry.category; }))).map(function (category) { return '<option value="' + escapeHtml(category) + '">'; }).join('');
     document.getElementById('productModal').style.display = 'flex';
 }
 
@@ -544,7 +545,8 @@ function renderDiscountsTable() {
         var expired = discount.expiresAt && discount.expiresAt < now;
         var expiryText = discount.expiresAt ? discount.expiresAt : 'بدون تاريخ';
         var rowClass = expired ? ' style="opacity:0.5;"' : '';
-        return '<tr' + rowClass + '><td>' + typeLabels[discount.type] + '</td><td>' + (discount.type === 'all' ? 'الكل' : discount.value) + '</td><td>' + discount.percentage + '%</td><td>' + expiryText + (expired ? ' (منتهي)' : '') + '</td><td>' + discount.description + '</td><td class="actions"><button class="btn-edit" onclick="editDiscount(\'' + discount.id + '\')">تعديل</button><button class="btn-delete" onclick="deleteDiscount(\'' + discount.id + '\')">حذف</button></td></tr>';
+        var safeId = String(discount.id).replace(/[^A-Za-z0-9_-]/g, '');
+        return '<tr' + rowClass + '><td>' + escapeHtml(typeLabels[discount.type] || '') + '</td><td>' + escapeHtml(discount.type === 'all' ? 'الكل' : discount.value) + '</td><td>' + (Number(discount.percentage) || 0) + '%</td><td>' + escapeHtml(expiryText) + (expired ? ' (منتهي)' : '') + '</td><td>' + escapeHtml(discount.description) + '</td><td class="actions"><button class="btn-edit" onclick="editDiscount(\'' + safeId + '\')">تعديل</button><button class="btn-delete" onclick="deleteDiscount(\'' + safeId + '\')">حذف</button></td></tr>';
     }).join('');
 }
 
@@ -658,16 +660,17 @@ function renderOrdersTable() {
     tbody.innerHTML = filteredOrders.map(function (order) {
         var itemsCount = (order.items || []).reduce(function (sum, item) { return sum + (Number(item.qty) || 0); }, 0);
         var deliveryText = order.delivery === 'pickup' ? 'استلام' : (order.region ? DELIVERY_REGION_LABEL(order.region) : 'توصيل');
-        return '<tr class="order-main-row" onclick="toggleOrderDetails(\'' + order.id + '\')"><td>' + order.id + '</td><td>' + formatDateTime(order.date) + '</td><td>' + (order.customerName || '-') + '</td><td>' + (order.customerPhone || '-') + '</td><td>' + itemsCount + '</td><td>' + formatCurrency(order.total) + '</td><td>' + deliveryText + '</td><td><select class="order-status-select" onclick="event.stopPropagation()" onchange="updateOrderStatus(\'' + order.id + '\', this.value)">' + ['new', 'processing', 'completed', 'cancelled'].map(function (status) { return '<option value="' + status + '" ' + (order.status === status ? 'selected' : '') + '>' + ORDER_STATUS_LABEL(status) + '</option>'; }).join('') + '</select></td></tr><tr class="order-details-row" id="details-' + order.id + '" style="display:none;"><td colspan="8">' + renderOrderDetails(order) + '</td></tr>';
+        var safeId = String(order.id).replace(/[^A-Za-z0-9_-]/g, '');
+        return '<tr class="order-main-row" onclick="toggleOrderDetails(\'' + safeId + '\')"><td>' + escapeHtml(safeId) + '</td><td>' + escapeHtml(formatDateTime(order.date)) + '</td><td>' + escapeHtml(order.customerName || '-') + '</td><td>' + escapeHtml(order.customerPhone || '-') + '</td><td>' + itemsCount + '</td><td>' + formatCurrency(order.total) + '</td><td>' + escapeHtml(deliveryText) + '</td><td><select class="order-status-select" onclick="event.stopPropagation()" onchange="updateOrderStatus(\'' + safeId + '\', this.value)">' + ['new', 'processing', 'completed', 'cancelled'].map(function (status) { return '<option value="' + status + '" ' + (order.status === status ? 'selected' : '') + '>' + ORDER_STATUS_LABEL(status) + '</option>'; }).join('') + '</select></td></tr><tr class="order-details-row" id="details-' + safeId + '" style="display:none;"><td colspan="8">' + renderOrderDetails(order) + '</td></tr>';
     }).join('');
 }
 
 function renderOrderDetails(order) {
     var itemsHtml = (order.items || []).map(function (item) {
-        return '<div class="order-item-card"><strong>' + item.name + '</strong><div>' + item.brand + ' • ' + item.sizeLabel + '</div><div>الكمية: ' + item.qty + ' • السعر: ' + formatCurrency(item.price) + ' • الإجمالي: ' + formatCurrency(item.lineTotal) + '</div></div>';
+        return '<div class="order-item-card"><strong>' + escapeHtml(item.name) + '</strong><div>' + escapeHtml(item.brand) + ' • ' + escapeHtml(item.sizeLabel) + '</div><div>الكمية: ' + (Number(item.qty) || 0) + ' • السعر: ' + formatCurrency(item.price) + ' • الإجمالي: ' + formatCurrency(item.lineTotal) + '</div></div>';
     }).join('');
 
-    return '<div class="order-details"><div class="order-items-list">' + itemsHtml + '</div><div class="order-meta"><div><strong>الاسم:</strong> ' + (order.customerName || '-') + '<br><strong>الهاتف:</strong> ' + (order.customerPhone || '-') + '<br><strong>العنوان:</strong> ' + (order.address || '-') + '</div><div><strong>طريقة التوصيل:</strong> ' + (order.delivery === 'pickup' ? 'استلام ذاتي' : 'توصيل') + '<br><strong>المنطقة:</strong> ' + DELIVERY_REGION_LABEL(order.region) + '<br><strong>المجموع الفرعي:</strong> ' + formatCurrency(order.subtotal) + '<br><strong>التوصيل:</strong> ' + formatCurrency(order.deliveryCost || 0) + '<br><strong>الإجمالي:</strong> ' + formatCurrency(order.total) + '</div></div>' + (order.notes ? '<div class="order-item-card"><strong>ملاحظات:</strong><div>' + order.notes + '</div></div>' : '') + '</div>';
+    return '<div class="order-details"><div class="order-items-list">' + itemsHtml + '</div><div class="order-meta"><div><strong>الاسم:</strong> ' + escapeHtml(order.customerName || '-') + '<br><strong>الهاتف:</strong> ' + escapeHtml(order.customerPhone || '-') + '<br><strong>العنوان:</strong> ' + escapeHtml(order.address || '-') + '</div><div><strong>طريقة التوصيل:</strong> ' + (order.delivery === 'pickup' ? 'استلام ذاتي' : 'توصيل') + '<br><strong>المنطقة:</strong> ' + escapeHtml(DELIVERY_REGION_LABEL(order.region)) + '<br><strong>المجموع الفرعي:</strong> ' + formatCurrency(order.subtotal) + '<br><strong>التوصيل:</strong> ' + formatCurrency(order.deliveryCost || 0) + '<br><strong>الإجمالي:</strong> ' + formatCurrency(order.total) + '</div></div>' + (order.notes ? '<div class="order-item-card"><strong>ملاحظات:</strong><div>' + escapeHtml(order.notes) + '</div></div>' : '') + '</div>';
 }
 
 function toggleOrderDetails(orderId) {
@@ -834,7 +837,6 @@ function previewImage(input) {
 }
 
 async function uploadProductImage(file, productId) {
-    // Upload to ImgBB
     return new Promise(function (resolve, reject) {
         var reader = new FileReader();
         reader.onload = function (e) {
@@ -850,29 +852,17 @@ async function uploadProductImage(file, productId) {
                 canvas.height = h;
                 var ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
-                var base64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-                var formData = new FormData();
-                formData.append('key', 'de10f7f874d9dbf904fe0cd0ad00332d');
-                formData.append('image', base64);
-                formData.append('name', productId || 'product');
-                fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData })
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                        if (data && data.data && data.data.url) {
-                            resolve(data.data.url);
-                        } else {
-                            reject(new Error('ImgBB upload failed'));
-                        }
-                    })
-                    .catch(function (err) { reject(err); });
+                resolve(canvas.toDataURL('image/jpeg', 0.78));
             };
+            img.onerror = function () { reject(new Error('تعذر معالجة الصورة')); };
             img.src = e.target.result;
         };
+        reader.onerror = function () { reject(new Error('تعذر قراءة الملف')); };
         reader.readAsDataURL(file);
     });
 }
 
-/* ===== Media helpers: video → GIF, blob → ImgBB, unified product media ===== */
+/* ===== Media helpers: video → GIF, local data URLs, unified product media ===== */
 async function uploadProductMedia(file, productId) {
     if (file && file.type && file.type.indexOf('video') === 0) {
         setAdminStatus('جاري تحويل الفيديو إلى صورة متحركة (GIF)...', 'info');
@@ -887,18 +877,12 @@ function uploadBlobToImgbb(blob, name) {
     return new Promise(function (resolve, reject) {
         var reader = new FileReader();
         reader.onload = function (e) {
-            var base64 = String(e.target.result).split(',')[1];
-            var formData = new FormData();
-            formData.append('key', 'de10f7f874d9dbf904fe0cd0ad00332d');
-            formData.append('image', base64);
-            formData.append('name', name || 'media');
-            fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: formData })
-                .then(function (res) { return res.json(); })
-                .then(function (data) {
-                    if (data && data.data && data.data.url) resolve(data.data.url);
-                    else reject(new Error('ImgBB upload failed'));
-                })
-                .catch(reject);
+            var dataUrl = String(e.target.result || '');
+            if (dataUrl.length > 1500000) {
+                reject(new Error('حجم الملف بعد المعالجة كبير جداً'));
+                return;
+            }
+            resolve(dataUrl);
         };
         reader.onerror = function () { reject(new Error('تعذر قراءة الملف')); };
         reader.readAsDataURL(blob);
@@ -972,9 +956,10 @@ function renderHeroTable() {
     }
     body.innerHTML = heroSlides.map(function (slide) {
         var preview = slide.type === 'video'
-            ? '<video src="' + slide.url + '" muted style="width:74px;height:54px;object-fit:cover;border-radius:6px;"></video>'
-            : '<img src="' + slide.url + '" style="width:74px;height:54px;object-fit:cover;border-radius:6px;">';
-        return '<tr><td>' + preview + '</td><td>' + (slide.type === 'video' ? 'فيديو' : 'صورة') + '</td><td>' + (slide.title || '-') + '</td><td>' + (slide.order != null ? slide.order : 0) + '</td><td><button class="btn-danger" style="padding:6px 14px;font-size:13px;" onclick="deleteHeroSlide(\'' + slide.id + '\')">حذف</button></td></tr>';
+            ? '<video src="' + escapeHtml(safeMediaUrl(slide.url)) + '" muted style="width:74px;height:54px;object-fit:cover;border-radius:6px;"></video>'
+            : '<img src="' + escapeHtml(safeMediaUrl(slide.url)) + '" style="width:74px;height:54px;object-fit:cover;border-radius:6px;">';
+        var safeId = String(slide.id).replace(/[^A-Za-z0-9_-]/g, '');
+        return '<tr><td>' + preview + '</td><td>' + (slide.type === 'video' ? 'فيديو' : 'صورة') + '</td><td>' + escapeHtml(slide.title || '-') + '</td><td>' + (Number(slide.order) || 0) + '</td><td><button class="btn-danger" style="padding:6px 14px;font-size:13px;" onclick="deleteHeroSlide(\'' + safeId + '\')">حذف</button></td></tr>';
     }).join('');
 }
 

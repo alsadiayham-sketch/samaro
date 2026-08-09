@@ -182,12 +182,12 @@
                 if (!product) {
                     if (!item.name && !item.image && !item.price) return '';
                     var fbTotal = (Number(item.price) || 0) * item.qty;
-                    return '<div class="checkout-item"><img src="' + (item.image || FALLBACK_IMAGE) + '" alt="' + escapeHtml(item.name || '') + '"><div class="checkout-item-info"><h4>' + escapeHtml(item.name || 'منتج') + '</h4><span class="item-brand">' + escapeHtml(item.brand || '') + '</span></div><div class="checkout-item-qty"><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', -1)">−</button><span>' + item.qty + '</span><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', 1)">+</button></div><div class="checkout-item-price">' + formatCurrency(fbTotal) + '</div><button class="checkout-item-remove" onclick="removeItem(\'' + item.id + '\', ' + item.sizeIdx + ')">✕</button></div>';
+                    return '<div class="checkout-item"><img src="' + escapeHtml(safeMediaUrl(item.image || FALLBACK_IMAGE)) + '" alt="' + escapeHtml(item.name || '') + '"><div class="checkout-item-info"><h4>' + escapeHtml(item.name || 'منتج') + '</h4><span class="item-brand">' + escapeHtml(item.brand || '') + '</span></div><div class="checkout-item-qty"><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', -1)">−</button><span>' + (Number(item.qty) || 1) + '</span><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', 1)">+</button></div><div class="checkout-item-price">' + formatCurrency(fbTotal) + '</div><button class="checkout-item-remove" onclick="removeItem(\'' + item.id + '\', ' + item.sizeIdx + ')">✕</button></div>';
                 }
                 var sizeData = getSizeData(product, item.sizeIdx);
                 var pricing = getFinalPrice(product, item.sizeIdx, discounts);
                 var lineTotal = pricing.final * item.qty;
-                return '<div class="checkout-item"><img src="' + product.image + '" alt="' + product.name + '"><div class="checkout-item-info"><h4>' + product.name + '</h4><span class="item-brand">' + product.brand + '</span><span class="item-size">' + getSizeLabel(sizeData) + '</span></div><div class="checkout-item-qty"><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', -1)">−</button><span>' + item.qty + '</span><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', 1)">+</button></div><div class="checkout-item-price">' + formatCurrency(lineTotal) + '</div><button class="checkout-item-remove" onclick="removeItem(\'' + item.id + '\', ' + item.sizeIdx + ')">✕</button></div>';
+                return '<div class="checkout-item"><img src="' + escapeHtml(safeMediaUrl(product.image)) + '" alt="' + escapeHtml(product.name) + '"><div class="checkout-item-info"><h4>' + escapeHtml(product.name) + '</h4><span class="item-brand">' + escapeHtml(product.brand) + '</span><span class="item-size">' + escapeHtml(getSizeLabel(sizeData)) + '</span></div><div class="checkout-item-qty"><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', -1)">−</button><span>' + (Number(item.qty) || 1) + '</span><button onclick="changeQty(\'' + item.id + '\', ' + item.sizeIdx + ', 1)">+</button></div><div class="checkout-item-price">' + formatCurrency(lineTotal) + '</div><button class="checkout-item-remove" onclick="removeItem(\'' + item.id + '\', ' + item.sizeIdx + ')">✕</button></div>';
             }).join('');
 
             var subtotal = getSubtotal();
@@ -463,7 +463,8 @@
                 return;
             }
 
-            db.collection('orders').doc(order.id).set(order).then(function () {
+            db.collection('orders').add(order).then(function (docRef) {
+                order.id = docRef.id;
                 localStorage.setItem('samaro_last_order', JSON.stringify(order));
                 localStorage.setItem('samaro_cart', '[]');
                 cart = [];

@@ -13,6 +13,31 @@ export function json(data, status = 200, extraHeaders = {}) {
 
 export function bad(status, message) { return json({ error: message }, status); }
 
+export function cleanText(value, maxLength = 500) {
+    return String(value == null ? "" : value)
+        .replace(/[\u0000-\u001f\u007f<>"'`]/g, "")
+        .trim()
+        .slice(0, maxLength);
+}
+
+export function cleanId(value, fallback) {
+    const id = String(value || "");
+    return /^[A-Za-z0-9_-]{1,100}$/.test(id) ? id : fallback;
+}
+
+export function cleanMediaUrl(value) {
+    const url = cleanText(value, 1500000);
+    if (/^https:\/\//i.test(url)) return url;
+    if (/^(?:products\/|logo\.png$|hero-bg\.png$)/i.test(url)) return url;
+    if (/^data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(url)) return url;
+    return "";
+}
+
+export function cleanLinkUrl(value) {
+    const url = cleanText(value, 500);
+    return /^https:\/\//i.test(url) ? url : "";
+}
+
 // ---- base64url ----
 function b64urlFromBytes(buf) {
     const arr = new Uint8Array(buf);

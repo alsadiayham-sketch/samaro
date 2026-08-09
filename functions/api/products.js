@@ -1,4 +1,4 @@
-import { json, bad, requireRole, readJson } from "./_utils.js";
+import { json, bad, requireRole, readJson, cleanText, cleanId, cleanMediaUrl } from "./_utils.js";
 
 function rowToProduct(row) {
     let obj = {};
@@ -25,9 +25,25 @@ export async function onRequestPost(context) {
     const body = await readJson(context.request);
     if (!body || typeof body !== "object") return bad(400, "invalid body");
 
-    const id = String(body.id || newId());
-    const data = { ...body };
-    delete data.id;
+    const id = cleanId(body.id, newId());
+    const sizes = Array.isArray(body.sizes) ? body.sizes.slice(0, 20).map((size) => ({
+        size: cleanText(size && size.size, 80),
+        unit: cleanText(size && size.unit, 20),
+        price: Math.max(0, Math.min(100000, Number(size && size.price) || 0))
+    })).filter((size) => size.size && size.price > 0) : [];
+    const data = {
+        name: cleanText(body.name, 160),
+        brand: cleanText(body.brand, 100),
+        category: cleanText(body.category, 100),
+        description: cleanText(body.description, 1200),
+        image: cleanMediaUrl(body.image),
+        status: ["normal", "bestseller", "special", "soldout"].includes(body.status) ? body.status : "normal",
+        inStock: body.inStock !== false,
+        discount: Math.max(0, Math.min(99, Number(body.discount) || 0)),
+        order: Math.max(0, Math.min(100000, Number(body.order) || 0)),
+        sizes: sizes.length ? sizes : [{ size: "عبوة", unit: "", price: Math.max(0, Number(body.price) || 0) }]
+    };
+    if (!data.name || !data.category || !data.sizes[0].price) return bad(400, "invalid product");
     const now = Date.now();
     await context.env.DB
         .prepare("INSERT INTO products (id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at")

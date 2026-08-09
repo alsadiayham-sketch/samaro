@@ -1,4 +1,4 @@
-import { json, bad, requireRole, makeUserRecord, pbkdf2Hex, genSalt, readJson } from "./_utils.js";
+import { json, bad, requireRole, makeUserRecord, pbkdf2Hex, genSalt, readJson, cleanText } from "./_utils.js";
 
 // Users are sensitive: only admins may touch this endpoint, and we NEVER
 // return salt/hash to the client. Passwords are write-only.
@@ -21,9 +21,9 @@ export async function onRequestPost(context) {
     const body = await readJson(context.request);
     if (!body) return bad(400, "invalid body");
 
-    const username = String(body.username || "").trim();
-    if (!username || username.length > 80) return bad(400, "invalid username");
-    const name = String(body.name || username);
+    const username = cleanText(body.username, 80);
+    if (!/^[A-Za-z0-9._-]{3,80}$/.test(username)) return bad(400, "invalid username");
+    const name = cleanText(body.name || username, 120);
     const role = body.role === "worker" ? "worker" : "admin";
     const password = body.password ? String(body.password) : "";
 

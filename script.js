@@ -172,7 +172,7 @@ function applySettings() {
     if (heroSub) heroSub.textContent = siteSettings.heroSubtitle;
 
     var aboutText = document.getElementById('aboutText');
-    if (aboutText) aboutText.innerHTML = siteSettings.aboutText.replace(/\n/g, '<br>');
+    if (aboutText) aboutText.innerHTML = escapeHtml(siteSettings.aboutText).replace(/\n/g, '<br>');
 
     var whatsappLink = document.getElementById('whatsappLink');
     if (whatsappLink) whatsappLink.href = buildWhatsAppUrl(siteSettings.whatsappNumber);
@@ -250,32 +250,38 @@ function renderProducts(productsToShow) {
     productsToShow.forEach(function (product) {
         var sizeData = getSizeData(product, 0);
         var pricing = getFinalPrice(product, 0, discounts);
+        var safeId = String(product.id).replace(/[^A-Za-z0-9_-]/g, '');
+        var safeName = escapeHtml(product.name);
+        var safeBrand = escapeHtml(product.brand);
+        var safeCategory = escapeHtml(product.category);
+        var safeImage = escapeHtml(safeMediaUrl(product.image));
+        var safeSizeLabel = escapeHtml(getSizeLabel(sizeData));
         var statusBadge = getStatusBadge(product.status);
         var discountBadge = pricing.hasDiscount ? '<span class="discount-badge">-' + pricing.discountPercent + '%</span>' : '';
         var soldOutClass = product.status === 'soldout' ? 'sold-out' : '';
         var sizeSelector = product.sizes.length > 1
-            ? '<div class="card-size-selector"><label for="sizeSelect-' + product.id + '">الحجم:</label><select id="sizeSelect-' + product.id + '" class="size-select" onclick="event.stopPropagation()" onchange="updateProductSize(\'' + product.id + '\', this.value)">' + product.sizes.map(function (size, idx) { return '<option value="' + idx + '">' + getSizeLabel(size) + '</option>'; }).join('') + '</select></div>'
-            : '<div class="card-size-single"><span>الحجم:</span><strong>' + getSizeLabel(sizeData) + '</strong></div>';
+            ? '<div class="card-size-selector"><label for="sizeSelect-' + safeId + '">الحجم:</label><select id="sizeSelect-' + safeId + '" class="size-select" onclick="event.stopPropagation()" onchange="updateProductSize(\'' + safeId + '\', this.value)">' + product.sizes.map(function (size, idx) { return '<option value="' + idx + '">' + escapeHtml(getSizeLabel(size)) + '</option>'; }).join('') + '</select></div>'
+            : '<div class="card-size-single"><span>الحجم:</span><strong>' + safeSizeLabel + '</strong></div>';
 
         var card = document.createElement('div');
         card.className = 'product-card ' + soldOutClass;
-        card.dataset.productId = String(product.id);
+        card.dataset.productId = safeId;
         card.innerHTML = [
             discountBadge,
             statusBadge,
-            '<div class="product-image" onclick="openPDP(\'' + product.id + '\')" style="cursor:pointer;">',
-            '<img src="' + product.image + '" alt="' + product.name + '" loading="lazy" onerror="this.src=\'' + FALLBACK_IMAGE + '\'">',
+            '<div class="product-image" onclick="openPDP(\'' + safeId + '\')" style="cursor:pointer;">',
+            '<img src="' + safeImage + '" alt="' + safeName + '" loading="lazy" onerror="this.src=\'' + FALLBACK_IMAGE + '\'">',
             '</div>',
-            '<div class="product-info" onclick="openPDP(\'' + product.id + '\')" style="cursor:pointer;">',
-            '<span class="product-brand">' + product.brand + '</span>',
-            '<h3>' + product.name + '</h3>',
-            '<div class="product-meta"><span>' + product.category + '</span><span class="product-size" id="productSize-' + product.id + '">' + getSizeLabel(sizeData) + '</span></div>',
-            '<div class="product-price" id="productPrice-' + product.id + '">' + getPriceHTML(pricing) + '</div>',
+            '<div class="product-info" onclick="openPDP(\'' + safeId + '\')" style="cursor:pointer;">',
+            '<span class="product-brand">' + safeBrand + '</span>',
+            '<h3>' + safeName + '</h3>',
+            '<div class="product-meta"><span>' + safeCategory + '</span><span class="product-size" id="productSize-' + safeId + '">' + safeSizeLabel + '</span></div>',
+            '<div class="product-price" id="productPrice-' + safeId + '">' + getPriceHTML(pricing) + '</div>',
             '</div>',
             '<div class="product-card-controls">' + sizeSelector + '</div>',
             '<div class="product-card-actions">',
-            '<div class="qty-selector qty-sm" id="qty-' + product.id + '"><button onclick="event.stopPropagation(); changeCardQty(\'' + product.id + '\', -1)">−</button><span id="cardQty-' + product.id + '">1</span><button onclick="event.stopPropagation(); changeCardQty(\'' + product.id + '\', 1)">+</button></div>',
-            '<button class="btn-add-cart" onclick="addToCart(event, \'' + product.id + '\')" ' + (product.status === 'soldout' ? 'disabled' : '') + '>' + (product.status === 'soldout' ? 'نفذت الكمية' : 'أضيفي') + '</button>',
+            '<div class="qty-selector qty-sm" id="qty-' + safeId + '"><button onclick="event.stopPropagation(); changeCardQty(\'' + safeId + '\', -1)">−</button><span id="cardQty-' + safeId + '">1</span><button onclick="event.stopPropagation(); changeCardQty(\'' + safeId + '\', 1)">+</button></div>',
+            '<button class="btn-add-cart" onclick="addToCart(event, \'' + safeId + '\')" ' + (product.status === 'soldout' ? 'disabled' : '') + '>' + (product.status === 'soldout' ? 'نفذت الكمية' : 'أضيفي') + '</button>',
             '</div>'
         ].join('');
         grid.appendChild(card);
@@ -962,14 +968,14 @@ function renderHeroSlider(slides) {
     var html = slides.map(function(slide, idx) {
         var media = '';
         if (slide.type === 'video') {
-            media = '<video src="' + slide.url + '" muted playsinline' + (idx === 0 ? ' autoplay' : '') + ' style="width:100%;height:75vh;object-fit:cover;" onended="goHeroSlide(' + ((idx + 1) % slides.length) + ')"></video>';
+            media = '<video src="' + escapeHtml(safeMediaUrl(slide.url)) + '" muted playsinline' + (idx === 0 ? ' autoplay' : '') + ' style="width:100%;height:75vh;object-fit:cover;" onended="goHeroSlide(' + ((idx + 1) % slides.length) + ')"></video>';
         } else {
-            media = '<img src="' + slide.url + '" alt="' + (slide.title || '') + '" style="width:100%;height:75vh;object-fit:cover;">';
+            media = '<img src="' + escapeHtml(safeMediaUrl(slide.url)) + '" alt="' + escapeHtml(slide.title || '') + '" style="width:100%;height:75vh;object-fit:cover;">';
         }
         return '<div class="hero-slide' + (idx === 0 ? ' active' : '') + '">' + media +
             '<div class="hero-overlay"><div class="hero-content">' +
-            (slide.title ? '<h2>' + slide.title + '</h2>' : '') +
-            (slide.subtitle ? '<p>' + slide.subtitle + '</p>' : '') +
+            (slide.title ? '<h2>' + escapeHtml(slide.title) + '</h2>' : '') +
+            (slide.subtitle ? '<p>' + escapeHtml(slide.subtitle) + '</p>' : '') +
             '<a href="#products" class="btn-primary">تسوقي الآن</a>' +
             '</div></div></div>';
     }).join('');
@@ -1026,7 +1032,7 @@ function openPDP(productId) {
     currentPDPSizeIdx = 0;
     pdpQty = 1;
 
-    document.getElementById('pdpImage').innerHTML = '<img src="' + product.image + '" alt="' + product.name + '" onerror="this.src=\'' + FALLBACK_IMAGE + '\'">';
+    document.getElementById('pdpImage').innerHTML = '<img src="' + escapeHtml(safeMediaUrl(product.image)) + '" alt="' + escapeHtml(product.name) + '" onerror="this.src=\'' + FALLBACK_IMAGE + '\'">';
     document.getElementById('pdpBrand').textContent = product.brand;
     document.getElementById('pdpName').textContent = product.name;
     document.getElementById('pdpQty').textContent = '1';
@@ -1066,9 +1072,10 @@ function renderRelatedProducts(product) {
     section.style.display = 'block';
     container.innerHTML = related.map(function (p) {
         var pricing = getFinalPrice(p, 0, discounts);
-        return '<div class="pdp-related-item" onclick="openPDP(\'' + p.id + '\')">' +
-            '<img src="' + p.image + '" alt="' + p.name + '" onerror="this.src=\'' + FALLBACK_IMAGE + '\'">' +
-            '<div class="related-info"><p>' + p.name + '</p><span>' + formatCurrency(pricing.final) + '</span></div>' +
+        var safeId = String(p.id).replace(/[^A-Za-z0-9_-]/g, '');
+        return '<div class="pdp-related-item" onclick="openPDP(\'' + safeId + '\')">' +
+            '<img src="' + escapeHtml(safeMediaUrl(p.image)) + '" alt="' + escapeHtml(p.name) + '" onerror="this.src=\'' + FALLBACK_IMAGE + '\'">' +
+            '<div class="related-info"><p>' + escapeHtml(p.name) + '</p><span>' + formatCurrency(pricing.final) + '</span></div>' +
             '</div>';
     }).join('');
 }
@@ -1086,7 +1093,7 @@ function renderPDPSizeOptions() {
 
     section.style.display = 'flex';
     container.innerHTML = currentPDPProduct.sizes.map(function (size, idx) {
-        return '<button type="button" class="pdp-size-btn ' + (idx === currentPDPSizeIdx ? 'active' : '') + '" onclick="selectPDPSize(' + idx + ')">' + getSizeLabel(size) + '</button>';
+        return '<button type="button" class="pdp-size-btn ' + (idx === currentPDPSizeIdx ? 'active' : '') + '" onclick="selectPDPSize(' + idx + ')">' + escapeHtml(getSizeLabel(size)) + '</button>';
     }).join('');
 }
 
@@ -1100,7 +1107,7 @@ function updatePDPDisplay() {
     if (!currentPDPProduct) return;
     var sizeData = getSizeData(currentPDPProduct, currentPDPSizeIdx);
     var pricing = getFinalPrice(currentPDPProduct, currentPDPSizeIdx, discounts);
-    document.getElementById('pdpMeta').innerHTML = '<span>' + currentPDPProduct.category + '</span><span>' + getSizeLabel(sizeData) + '</span>';
+    document.getElementById('pdpMeta').innerHTML = '<span>' + escapeHtml(currentPDPProduct.category) + '</span><span>' + escapeHtml(getSizeLabel(sizeData)) + '</span>';
     document.getElementById('pdpPrice').innerHTML = (pricing.hasDiscount ? '<span class="original-price">' + formatCurrency(pricing.original) + '</span>' : '') + '<span class="final-price">' + formatCurrency(pricing.final) + '</span>';
 }
 

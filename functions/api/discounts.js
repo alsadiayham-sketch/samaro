@@ -1,4 +1,4 @@
-import { json, bad, requireRole, readJson } from "./_utils.js";
+import { json, bad, requireRole, readJson, cleanText, cleanId } from "./_utils.js";
 
 function rowToDiscount(row) {
     let obj = {};
@@ -22,9 +22,16 @@ export async function onRequestPost(context) {
     if (gate.error) return gate.error;
     const body = await readJson(context.request);
     if (!body || typeof body !== "object") return bad(400, "invalid body");
-    const id = String(body.id || newId());
-    const data = { ...body };
-    delete data.id;
+    const id = cleanId(body.id, newId());
+    const data = {
+        type: ["brand", "category", "manual", "all"].includes(body.type) ? body.type : "manual",
+        value: cleanText(body.value, 160),
+        values: Array.isArray(body.values) ? body.values.slice(0, 50).map((value) => cleanText(value, 100)).filter(Boolean) : [],
+        percentage: Math.max(0, Math.min(99, Number(body.percentage || body.discount) || 0)),
+        description: cleanText(body.description, 300),
+        active: body.active !== false,
+        expiresAt: cleanText(body.expiresAt, 40)
+    };
     await context.env.DB
         .prepare("INSERT INTO discounts (id, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at")
         .bind(id, JSON.stringify(data), Date.now())

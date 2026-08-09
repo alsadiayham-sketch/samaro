@@ -1,4 +1,4 @@
-import { json, bad, requireRole, readJson } from "./_utils.js";
+import { json, bad, requireRole, readJson, cleanText, cleanId, cleanMediaUrl } from "./_utils.js";
 
 function rowToHero(row) {
     let obj = {};
@@ -22,10 +22,16 @@ export async function onRequestPost(context) {
     if (gate.error) return gate.error;
     const body = await readJson(context.request);
     if (!body || typeof body !== "object") return bad(400, "invalid body");
-    const id = String(body.id || newId());
+    const id = cleanId(body.id, newId());
     const ord = Number(body.ord != null ? body.ord : (body.order != null ? body.order : 0));
-    const data = { ...body };
-    delete data.id;
+    const data = {
+        url: cleanMediaUrl(body.url),
+        type: body.type === "video" ? "video" : "image",
+        title: cleanText(body.title, 180),
+        subtitle: cleanText(body.subtitle, 300),
+        order: Math.max(0, Math.min(1000, ord || 0))
+    };
+    if (!data.url) return bad(400, "invalid media url");
     await context.env.DB
         .prepare("INSERT INTO hero (id, data, ord) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data, ord = excluded.ord")
         .bind(id, JSON.stringify(data), ord)

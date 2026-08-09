@@ -150,6 +150,14 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
+function safeMediaUrl(value) {
+    var url = String(value == null ? '' : value).trim();
+    if (/^https:\/\//i.test(url)) return url;
+    if (/^(?:products\/|logo\.png$|hero-bg\.png$)/i.test(url)) return url;
+    if (/^data:image\/(?:png|jpe?g|gif|webp);base64,[A-Za-z0-9+/=]+$/i.test(url)) return url;
+    return 'logo.png';
+}
+
 function normalizeCustomPackageSet(entry) {
     return {
         chocolateType: String(entry && entry.chocolateType ? entry.chocolateType : 'mixed'),
