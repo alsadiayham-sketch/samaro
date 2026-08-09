@@ -10,7 +10,12 @@ var DEFAULT_SITE_SETTINGS = {
     tiktokLink: ''
 };
 
-var BRANDS_DATA = [{ name: 'Vanoise', logo: '🍰' }, { name: 'ViaSweet', logo: '🍫' }, { name: 'Chocolake', logo: '🥄' }, { name: 'Samaro', logo: '🎂' }];
+var BRANDS_DATA = [
+    { name: 'Vanoise', logo: 'products/fb-15.jpg' },
+    { name: 'ViaSweet', logo: 'products/fb-10.jpg' },
+    { name: 'Chocolake', logo: 'products/fb-07.jpg' },
+    { name: 'Samaro', logo: 'logo.png' }
+];
 
 function normalizeSizeEntry(entry) {
     if (!entry) return { size: '-', unit: 'cm', price: 0 };

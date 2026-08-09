@@ -16,6 +16,7 @@ export function bad(status, message) { return json({ error: message }, status); 
 export function cleanText(value, maxLength = 500) {
     return String(value == null ? "" : value)
         .replace(/[\u0000-\u001f\u007f<>"'`]/g, "")
+        .replace(/\b(?:onerror|onload|onmouseover|onclick|javascript)\s*[:=]?/gi, "")
         .trim()
         .slice(0, maxLength);
 }
