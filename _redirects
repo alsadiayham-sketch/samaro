@@ -1,0 +1,5 @@
+/schema.sql /404.html 404
+/wrangler.toml /404.html 404
+/.github/* /404.html 404
+/.gitignore /404.html 404
+/.assetsignore /404.html 404
