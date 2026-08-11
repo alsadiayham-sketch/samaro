@@ -668,6 +668,8 @@ function renderOrderItemRow(item) {
         }).join(' • ');
         var packageDetails = 'لون التغليف: ' + getWrapperColorLabel(item.wrapperColor) + ' • ' + (item.delivery === 'delivery' ? 'توصيل' : 'استلام');
         if (item.customerLocation) packageDetails += ' • ' + item.customerLocation;
+        if (item.customerName) packageDetails += ' • العميل: ' + item.customerName;
+        if (item.customerPhone) packageDetails += ' • الهاتف: ' + item.customerPhone;
         if (item.notes) packageDetails += ' • ملاحظات: ' + item.notes;
         return '<div class="order-product-row"><div><strong>' + escapeHtml(getCustomPackageTitle(item)) + '</strong><span>' + escapeHtml(sets || 'علبة مخصصة') + '</span><span>' + escapeHtml(packageDetails) + '</span></div><div class="order-product-numbers"><span>الكمية 1</span><strong>يحدد لاحقاً</strong></div></div>';
     }
@@ -677,15 +679,16 @@ function renderOrderItemRow(item) {
 function renderOrderCard(order) {
     var safeId = String(order.id).replace(/[^A-Za-z0-9_-]/g, '');
     var items = Array.isArray(order.items) ? order.items : [];
-    var itemsCount = items.reduce(function (sum, item) { return sum + (Number(item.qty) || 1); }, 0);
+    var itemsCount = items.reduce(function (sum, item) { return sum + Math.max(1, Number(item.qty) || 1); }, 0);
     var deliveryTitle = order.delivery === 'pickup' ? 'استلام ذاتي' : 'توصيل';
     var address = order.delivery === 'pickup' ? 'الاستلام من المتجر' : (order.address || '-');
+    var safeStatus = ['new', 'processing', 'completed', 'cancelled'].indexOf(order.status) >= 0 ? order.status : 'new';
     var statusOptions = ['new', 'processing', 'completed', 'cancelled'].map(function (status) {
-        return '<option value="' + status + '" ' + (order.status === status ? 'selected' : '') + '>' + ORDER_STATUS_LABEL(status) + '</option>';
+        return '<option value="' + status + '" ' + (safeStatus === status ? 'selected' : '') + '>' + ORDER_STATUS_LABEL(status) + '</option>';
     }).join('');
 
     return '<article class="order-card">' +
-        '<header class="order-card-header"><div><span class="order-number">#' + escapeHtml(safeId) + '</span><time>' + escapeHtml(formatDateTime(order.date || order.createdAt)) + '</time></div><select class="order-status-select status-' + escapeHtml(order.status || 'new') + '" aria-label="حالة الطلب" onchange="updateOrderStatus(\'' + safeId + '\', this.value)">' + statusOptions + '</select></header>' +
+        '<header class="order-card-header"><div><span class="order-number">#' + escapeHtml(safeId) + '</span><time>' + escapeHtml(formatDateTime(order.date || order.createdAt)) + '</time></div><select class="order-status-select status-' + safeStatus + '" aria-label="حالة الطلب" onchange="updateOrderStatus(\'' + safeId + '\', this.value, this)">' + statusOptions + '</select></header>' +
         '<section class="order-customer-grid"><div><span class="order-label">العميل</span><strong>' + escapeHtml(order.customerName || '-') + '</strong></div><div><span class="order-label">الهاتف</span><a href="tel:' + escapeHtml(order.customerPhone || '') + '">' + escapeHtml(order.customerPhone || '-') + '</a></div><div><span class="order-label">' + deliveryTitle + '</span><strong>' + escapeHtml(DELIVERY_REGION_LABEL(order.region)) + '</strong><span>' + escapeHtml(address) + '</span></div><div><span class="order-label">عدد القطع</span><strong>' + itemsCount + '</strong></div></section>' +
         '<section class="order-products"><h4>تفاصيل المنتجات</h4>' + items.map(renderOrderItemRow).join('') + '</section>' +
         (order.notes ? '<section class="order-note"><span class="order-label">ملاحظات العميل</span><p>' + escapeHtml(order.notes) + '</p></section>' : '') +
@@ -693,11 +696,18 @@ function renderOrderCard(order) {
         '</article>';
 }
 
-async function updateOrderStatus(orderId, status) {
+async function updateOrderStatus(orderId, status, selectElement) {
+    if (selectElement) selectElement.className = 'order-status-select status-' + status;
     setAdminLoading(true);
-    await db.collection('orders').doc(String(orderId)).update({ status: status });
-    setAdminLoading(false);
-    setAdminStatus('تم تحديث حالة الطلب.', 'success');
+    try {
+        await db.collection('orders').doc(String(orderId)).update({ status: status });
+        setAdminStatus('تم تحديث حالة الطلب.', 'success');
+    } catch (error) {
+        setAdminStatus('تعذر تحديث حالة الطلب.', 'error');
+        renderOrdersTable();
+    } finally {
+        setAdminLoading(false);
+    }
 }
 
 function ORDER_STATUS_LABEL(status) {

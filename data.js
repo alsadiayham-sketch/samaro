@@ -201,6 +201,35 @@ function getCustomPackageTitle(item) {
     return 'علبة مخصصة (' + setsCount + ' تشكيلات)';
 }
 
+function getPackagingTypeLabel(value) {
+    return { dark: 'داكن', milk: 'حليب', white: 'أبيض', mixed: 'مشكل' }[value] || 'مشكل';
+}
+
+function getPackagingFillingLabel(value) {
+    return {
+        plain: 'سادا / بدون حشوة',
+        hazelnut: 'بندق',
+        caramel: 'كراميل',
+        pistachio: 'فستق',
+        coconut: 'جوز الهند',
+        strawberry: 'فراولة',
+        orange: 'برتقال'
+    }[value] || 'سادا / بدون حشوة';
+}
+
+function getWrapperColorLabel(value) {
+    return {
+        gold: 'ذهبي',
+        silver: 'فضي',
+        red: 'أحمر',
+        pink: 'زهري',
+        purple: 'بنفسجي',
+        black: 'أسود',
+        white: 'أبيض',
+        blue: 'أزرق'
+    }[value] || 'ذهبي';
+}
+
 function hasCustomPricingPending(items) {
     return (Array.isArray(items) ? items : []).some(function (item) {
         return isCustomPackageItem(item);

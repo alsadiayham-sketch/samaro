@@ -428,42 +428,6 @@ function createDefaultPackagingSet() {
     };
 }
 
-function getPackagingTypeLabel(value) {
-    switch (value) {
-        case 'dark': return 'داكن';
-        case 'milk': return 'حليب';
-        case 'white': return 'أبيض';
-        default: return 'مشكل';
-    }
-}
-
-function getPackagingFillingLabel(value) {
-    switch (value) {
-        case 'plain': return 'سادا / بدون حشوة';
-        case 'hazelnut': return 'بندق';
-        case 'caramel': return 'كراميل';
-        case 'pistachio': return 'فستق';
-        case 'coconut': return 'جوز الهند';
-        case 'strawberry': return 'فراولة';
-        case 'orange': return 'برتقال';
-        default: return 'سادا / بدون حشوة';
-    }
-}
-
-function getWrapperColorLabel(value) {
-    switch (value) {
-        case 'gold': return 'ذهبي';
-        case 'silver': return 'فضي';
-        case 'red': return 'أحمر';
-        case 'pink': return 'زهري';
-        case 'purple': return 'بنفسجي';
-        case 'black': return 'أسود';
-        case 'white': return 'أبيض';
-        case 'blue': return 'أزرق';
-        default: return 'ذهبي';
-    }
-}
-
 function buildPackagingOptions(options, selectedValue) {
     return options.map(function (option) {
         return '<option value="' + option.value + '"' + (selectedValue === option.value ? ' selected' : '') + '>' + option.label + '</option>';
